@@ -51,16 +51,14 @@ void setup() {
     initializeFood(100);
     initializeMutationPools(3);
 }
-
 void initializeSound() {
-    reflectionSound = new SoundFile(this, "data/Reflection of Times.wav");
+    reflectionSound = new SoundFile(this, "Reflection of Times.wav");
     if (reflectionSound != null) {
         reflectionSound.loop();
     } else {
         println("Error: 'Reflection of Times.wav' not found in the 'data' folder.");
     }
 }
-
 // UI Elements: Main menu, world parameters, simulation controls, and description screen
 void setupMainMenu() {
     mainMenuPanel = new ControlPanel();
