@@ -355,8 +355,7 @@ void displayDescriptionScreen() {
     text("Observe the evolution of organisms in a radioactive environment.", width / 2, height / 2);
     text("Each creature adapts based on its genetic traits,", width / 2, height / 2 + 20);
     text("with factors like radiation, temperature, and food availability", width / 2, height / 2 + 40);
-    text("influencing survival, reproduction, and mutation.
-Composer:- Christopher J Boardman and Jake Rae", width / 2, height / 2 + 60);
+    text("influencing survival, reproduction, and mutation.", width / 2, height / 2 + 60);
 }
 
 void displayCreditsScreen() {
@@ -641,6 +640,19 @@ void runSimulation() {
     }
 }
 
+// Display world stats
+void displayWorldStats() {
+    fill(255);
+    textAlign(LEFT);
+    textSize(16);
+    text("Population: " + population.size(), 20, 30);
+    text("Food Count: " + foods.size(), 20, 50);
+    text("Radiation Level: " + radiationLevel, 20, 70);
+    text("Temperature Level: " + temperatureLevel, 20, 90);
+    text("Oxygen Level: " + oxygenLevel, 20, 110);
+    text("CO2 Level: " + co2Level, 20, 130);
+}
+
 // Mouse controls for zoom and drag
 void mouseWheel(MouseEvent event) {
     float e = event.getCount();
@@ -657,17 +669,4 @@ void mouseDragged() {
     cameraPos.x -= dx / zoomLevel;
     cameraPos.y -= dy / zoomLevel;
     lastMousePos.set(mouseX, mouseY);
-}
-
-// Display world stats
-void displayWorldStats() {
-    fill(255);
-    textAlign(LEFT);
-    textSize(16);
-    text("Population: " + population.size(), 20, 30);
-    text("Food Count: " + foods.size(), 20, 50);
-    text("Radiation Level: " + radiationLevel, 20, 70);
-    text("Temperature Level: " + temperatureLevel, 20, 90);
-    text("Oxygen Level: " + oxygenLevel, 20, 110);
-    text("CO2 Level: " + co2Level, 20, 130);
 }
