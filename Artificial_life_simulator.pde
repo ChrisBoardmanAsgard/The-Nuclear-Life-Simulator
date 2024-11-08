@@ -56,7 +56,7 @@ void setup() {
     setupWorldParameterScreen();
     setupSimulationControls();
     initializeFood(100);
-    initializeMutationPools(3); // Initialize mutation pools
+    initializeMutationPools(3);
 }
 
 void draw() {
@@ -263,7 +263,8 @@ void setupSimulationControls() {
     cp5.addButton("Speed -")
         .setPosition(200, height - 50)
         .setSize(80, 30)
-        .onClick(e -> simulationSpeed = constrain(simulationSpeed - 0.2, 0.5, 2.0));
+        .onClick(e -> simulationSpeed = constrain(simulationSpeed - 0.2,
+        0.5, 2.0));
 
     cp5.addButton("Next Track")
         .setPosition(290, height - 50)
@@ -375,7 +376,7 @@ class Organism {
     boolean isDead = false;
     NeuralNetwork brain;
     float sizeFactor;
-    int reproductionThreshold = 5;
+    int reproductionThreshold = 3; // Lowered threshold for more offspring
     color organismColor;
     float temperatureTolerance;
     float foodPreference;
@@ -384,7 +385,7 @@ class Organism {
     int foodEaten = 0;
     boolean needsOxygen = random(1) < 0.5;
     float geneticInstability = 0;
-    boolean hasMembrane = true;  // Ensure organisms always have a membrane
+    boolean hasMembrane = true;
     boolean hasEye = true;
 
     Organism() {
@@ -436,18 +437,6 @@ class Organism {
         if (energy < 120) seekFood();
         if (foodEaten >= reproductionThreshold) reproduce();
         if (age > 300 && random(1) < 0.002) mutate();
-        adaptToChallenges(); // Call to adapt to challenges
-    }
-
-    void adaptToChallenges() {
-        // Check for nearby mutation pools and use them to adapt
-        for (MutationPool pool : mutationPools) {
-            if (PVector.dist(position, pool.position) < pool.radius) {
-                if (random(1) < 0.5) { // 50% chance to mutate when near a mutation pool
-                    mutate();
-                }
-            }
-        }
     }
 
     float closestFoodDistance() {
@@ -482,24 +471,26 @@ class Organism {
     }
 
     void eat(Food food) {
-        energy += food.energy;
+        energy += food.energy + 20; // Increased energy from food
         foods.remove(food);
         foodEaten++;
     }
 
     void reproduce() {
         if (population.size() < maxPopulation) {
-            Organism offspring = new Organism();
-            offspring.brain = brain.copy();
-            offspring.sizeFactor = sizeFactor * random(0.95, 1.05);
-            offspring.organismColor = color(
-                red(organismColor) * random(0.95, 1.05),
-                green(organismColor) * random(0.95, 1.05),
-                blue(organismColor) * random(0.95, 1.05)
-            );
-            offspring.position = PVector.add(position, PVector.random2D().mult(sizeFactor * 10));
-            population.add(offspring);
-            energy /= 2;
+            for (int i = 0; i < 2; i++) { // Increase offspring count
+                Organism offspring = new Organism();
+                offspring.brain = brain.copy();
+                offspring.sizeFactor = sizeFactor * random(0.95, 1.05);
+                offspring.organismColor = color(
+                    red(organismColor) * random(0.95, 1.05),
+                    green(organismColor) * random(0.95, 1.05),
+                    blue(organismColor) * random(0.95, 1.05)
+                );
+                offspring.position = PVector.add(position, PVector.random2D().mult(sizeFactor * 10));
+                population.add(offspring);
+            }
+            energy /= 2; // Divide energy after reproduction
             foodEaten = 0;
         }
     }
@@ -649,11 +640,6 @@ void runSimulation() {
         } else {
             population.remove(i);
         }
-    }
-
-    // Display mutation pools
-    for (MutationPool pool : mutationPools) {
-        pool.display();
     }
 }
 
