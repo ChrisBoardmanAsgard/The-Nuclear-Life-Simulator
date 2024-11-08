@@ -355,7 +355,8 @@ void displayDescriptionScreen() {
     text("Observe the evolution of organisms in a radioactive environment.", width / 2, height / 2);
     text("Each creature adapts based on its genetic traits,", width / 2, height / 2 + 20);
     text("with factors like radiation, temperature, and food availability", width / 2, height / 2 + 40);
-    text("influencing survival, reproduction, and mutation.", width / 2, height / 2 + 60);
+    text("influencing survival, reproduction, and mutation.
+Composer:- Christopher J Boardman and Jake Rae", width / 2, height / 2 + 60);
 }
 
 void displayCreditsScreen() {
