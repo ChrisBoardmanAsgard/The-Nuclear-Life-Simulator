@@ -56,7 +56,7 @@ void setup() {
     setupWorldParameterScreen();
     setupSimulationControls();
     initializeFood(100);
-    initializeMutationPools(3);
+    initializeMutationPools(3); // Initialize mutation pools
 }
 
 void draw() {
@@ -436,6 +436,18 @@ class Organism {
         if (energy < 120) seekFood();
         if (foodEaten >= reproductionThreshold) reproduce();
         if (age > 300 && random(1) < 0.002) mutate();
+        adaptToChallenges(); // Call to adapt to challenges
+    }
+
+    void adaptToChallenges() {
+        // Check for nearby mutation pools and use them to adapt
+        for (MutationPool pool : mutationPools) {
+            if (PVector.dist(position, pool.position) < pool.radius) {
+                if (random(1) < 0.5) { // 50% chance to mutate when near a mutation pool
+                    mutate();
+                }
+            }
+        }
     }
 
     float closestFoodDistance() {
@@ -638,19 +650,11 @@ void runSimulation() {
             population.remove(i);
         }
     }
-}
 
-// Display world stats
-void displayWorldStats() {
-    fill(255);
-    textAlign(LEFT);
-    textSize(16);
-    text("Population: " + population.size(), 20, 30);
-    text("Food Count: " + foods.size(), 20, 50);
-    text("Radiation Level: " + radiationLevel, 20, 70);
-    text("Temperature Level: " + temperatureLevel, 20, 90);
-    text("Oxygen Level: " + oxygenLevel, 20, 110);
-    text("CO2 Level: " + co2Level, 20, 130);
+    // Display mutation pools
+    for (MutationPool pool : mutationPools) {
+        pool.display();
+    }
 }
 
 // Mouse controls for zoom and drag
@@ -669,4 +673,17 @@ void mouseDragged() {
     cameraPos.x -= dx / zoomLevel;
     cameraPos.y -= dy / zoomLevel;
     lastMousePos.set(mouseX, mouseY);
+}
+
+// Display world stats
+void displayWorldStats() {
+    fill(255);
+    textAlign(LEFT);
+    textSize(16);
+    text("Population: " + population.size(), 20, 30);
+    text("Food Count: " + foods.size(), 20, 50);
+    text("Radiation Level: " + radiationLevel, 20, 70);
+    text("Temperature Level: " + temperatureLevel, 20, 90);
+    text("Oxygen Level: " + oxygenLevel, 20, 110);
+    text("CO2 Level: " + co2Level, 20, 130);
 }
