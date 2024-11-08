@@ -15,6 +15,7 @@ int radiationLevel = 50;
 int temperatureLevel = 20;
 float oxygenLevel = 21.0;
 float co2Level = 0.04;
+float sulfurDioxideLevel = 0.01; // New atmospheric gas
 int maxPopulation = 200;
 int initialPopulation = 20;
 
@@ -219,6 +220,13 @@ void setupWorldParameterScreen() {
         .setValue(co2Level)
         .onRelease(e -> co2Level = e.getController().getValue());
 
+    cp5.addSlider("Sulfur Dioxide Level") // New gas level for sulfur dioxide
+        .setPosition(width / 2 - 100, height / 2 + 100)
+        .setSize(200, 20)
+        .setRange(0, 100)
+        .setValue(sulfurDioxideLevel)
+        .onRelease(e -> sulfurDioxideLevel = e.getController().getValue());
+
     hideWorldParameterSliders();
 }
 
@@ -238,6 +246,7 @@ void showWorldParameterSliders() {
     cp5.getController("Temperature Level").show();
     cp5.getController("Oxygen Level").show();
     cp5.getController("CO2 Level").show();
+    cp5.getController("Sulfur Dioxide Level").show(); // Show sulfur dioxide slider
 }
 
 void hideWorldParameterSliders() {
@@ -247,6 +256,7 @@ void hideWorldParameterSliders() {
     cp5.getController("Temperature Level").hide();
     cp5.getController("Oxygen Level").hide();
     cp5.getController("CO2 Level").hide();
+        cp5.getController("Sulfur Dioxide Level").hide(); // Hide sulfur dioxide slider
 }
 
 void setupSimulationControls() {
@@ -263,8 +273,7 @@ void setupSimulationControls() {
     cp5.addButton("Speed -")
         .setPosition(200, height - 50)
         .setSize(80, 30)
-        .onClick(e -> simulationSpeed = constrain(simulationSpeed - 0.2,
-        0.5, 2.0));
+        .onClick(e -> simulationSpeed = constrain(simulationSpeed - 0.2, 0.5, 2.0));
 
     cp5.addButton("Next Track")
         .setPosition(290, height - 50)
@@ -383,7 +392,8 @@ class Organism {
     float agility;
     float visionRange;
     int foodEaten = 0;
-    boolean needsOxygen = random(1) < 0.5;
+    boolean needsOxygen = random(1) < 0.5; // Randomly needs oxygen
+    boolean breathesCO2 = random(1) < 0.5; // Randomly breathes CO2
     float geneticInstability = 0;
     boolean hasMembrane = true;
     boolean hasEye = true;
@@ -407,14 +417,22 @@ class Organism {
             return;
         }
 
+        // Breathing logic
         if (needsOxygen && oxygenLevel > 0.1) {
             oxygenLevel -= 0.001 * simulationSpeed;
-            energy += 0.2;
+            energy += 0.2; // Gain energy from breathing
         } else if (!needsOxygen && co2Level > 0.01) {
             co2Level -= 0.0005 * simulationSpeed;
-            energy += 0.1;
+            energy += 0.1; // Gain energy from CO2
         } else {
-            energy -= 0.5;
+            energy -= 0.5; // Lose energy if not breathing
+        }
+
+        if (breathesCO2 && co2Level > 0.01) {
+            co2Level -= 0.001 * simulationSpeed;
+            energy += 0.2; // Gain energy from CO2
+        } else if (co2Level < 0.01) {
+            energy -= 0.5; // Lose energy if CO2 is low
         }
 
         float[] inputs = {closestFoodDistance(), energy / 100, temperatureTolerance, agility};
@@ -567,6 +585,28 @@ class MutationPool {
         stroke(255, 200, 50, 150);
         ellipse(displayX, displayY, radius * 2 * zoomLevel, radius * 2 * zoomLevel);
     }
+
+    void affectOrganisms(ArrayList<Organism> organisms) {
+        for (Organism org : organisms) {
+            float dist = PVector.dist(org.position, position);
+            if (dist < radius) {
+                // Mutation effects based on proximity to the mutation pool
+                org.geneticInstability += random(-5, 5); // Fluctuate genetic instability
+                if (random(1) < 0.5) { // Randomly change size
+                    org.sizeFactor *= random(0.8, 1.2);
+                }
+                if (random(1) < 0.5) { // Randomly change agility
+                    org.agility *= random(0.8, 1.2);
+                }
+                if (random(1) < 0.5) { // Randomly add segments
+                    org.sizeFactor += random(0.5, 1.5);
+                }
+                if (random(1) < 0.1) { // High chance of death if instability is high
+                    org.isDead = true;
+                }
+            }
+        }
+    }
 }
 
 // NeuralNetwork class
@@ -632,6 +672,11 @@ void runSimulation() {
         food.display();
     }
 
+    for (MutationPool pool : mutationPools) {
+        pool.display();
+        pool.affectOrganisms(population); // Apply mutation pool effects
+    }
+
     for (int i = population.size() - 1; i >= 0; i--) {
         Organism organism = population.get(i);
         organism.update();
@@ -672,4 +717,6 @@ void displayWorldStats() {
     text("Temperature Level: " + temperatureLevel, 20, 90);
     text("Oxygen Level: " + oxygenLevel, 20, 110);
     text("CO2 Level: " + co2Level, 20, 130);
+    text("Sulfur Dioxide Level: " + sulfurDioxideLevel, 20, 150);
 }
+
