@@ -36,8 +36,8 @@ int currentTrack = 0;  // To track which audio is currently playing
 String[] trackFiles = {
     "data/Reflection of Times v1.wav",
     "data/Reflection of Times v2.wav",
-    "data/The Nuclear Life Track 1 Fade InOut.wav",  // Ensure this is a valid WAV file
-    "data/The Nuclear Life Track 2 Fade InOut.wav"   // Ensure this is a valid WAV file
+    "data/The Nuclear Life Track 1 Fade InOut.wav",
+    "data/The Nuclear Life Track 2 Fade InOut.wav"
 };
 
 PVector lastMousePos;
@@ -76,6 +76,7 @@ void draw() {
         case STATE_SIMULATION:
             background(10, 30, 60);
             runSimulation();
+            displayWorldStats(); // Display world stats during simulation
             break;
         case STATE_DESCRIPTION:
             background(20, 40, 60);
@@ -90,11 +91,9 @@ void draw() {
 
 // Sound initialization
 void initializeSound() {
-    // Load sounds into the array
     for (int i = 0; i < trackFiles.length; i++) {
         tracks[i] = new SoundFile(this, trackFiles[i]);
         if (tracks[i] != null) {
-            // Set the first track as the default
             if (i == 0) {
                 tracks[i].loop();
             }
@@ -657,4 +656,17 @@ void mouseDragged() {
     cameraPos.x -= dx / zoomLevel;
     cameraPos.y -= dy / zoomLevel;
     lastMousePos.set(mouseX, mouseY);
+}
+
+// Display world stats
+void displayWorldStats() {
+    fill(255);
+    textAlign(LEFT);
+    textSize(16);
+    text("Population: " + population.size(), 20, 30);
+    text("Food Count: " + foods.size(), 20, 50);
+    text("Radiation Level: " + radiationLevel, 20, 70);
+    text("Temperature Level: " + temperatureLevel, 20, 90);
+    text("Oxygen Level: " + oxygenLevel, 20, 110);
+    text("CO2 Level: " + co2Level, 20, 130);
 }
