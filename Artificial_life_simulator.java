@@ -40,6 +40,7 @@ boolean isLoading = false;
 float loadProgress = 0.0f;
 boolean isWorldEmpty = false;
 int generationCount = 0;
+final int INITIAL_POPULATION_SIZE = 50;
 List<Creature> creatures = new ArrayList<>();
 List<Food> foods = new ArrayList<>();
 List<Obstacle> obstacles = new ArrayList<>();
@@ -403,7 +404,7 @@ public void setupSimulationControls() {
 }
 
 public void initializeSimulation() {
-    generationCount = 1;
+    generationCount = isWorldEmpty ? 0 : 1;
     isPaused = false;
     selectedCreature = null;
     creatures.clear();
@@ -411,7 +412,7 @@ public void initializeSimulation() {
     obstacles.clear();
 
     if (!isWorldEmpty) {
-        spawnNewGeneration(50);
+        spawnNewGeneration(INITIAL_POPULATION_SIZE);
     }
     for (int i = 0; i < 100; i++) foods.add(new Food());
     for (int i = 0; i < 10; i++) obstacles.add(new Obstacle(random(width), random(height), random(20, 50)));
@@ -457,7 +458,7 @@ public void updateAndDisplayCreatures() {
 
     if (!isWorldEmpty && creatures.isEmpty() && currentState == STATE_SIMULATION) {
         generationCount++;
-        spawnNewGeneration(50);
+        spawnNewGeneration(INITIAL_POPULATION_SIZE);
     }
 }
 
