@@ -360,6 +360,7 @@ public void setup() {
     cp5 = new ControlP5(this);
     setupMainMenu();
     setupSimulationControls();
+    setState(STATE_MAIN_MENU);
     ambientSound = new SoundFile(this, "Reflection of Times.wav");
     if (ambientSound != null) {
         ambientSound.loop();
@@ -375,19 +376,20 @@ public void setupMainMenu() {
     mainMenuPanel.addButton("Start Simulation", width / 2 - 75, height / 2, 150, 40, event -> {
         isWorldEmpty = false;
         initializeSimulation();
-        currentState = STATE_SIMULATION;
-        mainMenuPanel.hide();
-        simulationPanel.show();
+        setState(STATE_SIMULATION);
     });
     mainMenuPanel.addButton("Creature Archive", width / 2 - 75, height / 2 + 50, 150, 40, event -> {
-        currentState = STATE_ARCHIVE;
-        mainMenuPanel.hide();
+        setState(STATE_ARCHIVE);
     });
     mainMenuPanel.addButton("Controls", width / 2 - 75, height / 2 + 100, 150, 40, event -> {
-        currentState = STATE_CONTROLS;
-        mainMenuPanel.hide();
+        setState(STATE_CONTROLS);
     });
-    mainMenuPanel.addButton("Exit", width / 2 - 75, height / 2 + 150, 150, 40, event -> exit());
+    mainMenuPanel.addButton("Empty World", width / 2 - 75, height / 2 + 150, 150, 40, event -> {
+        isWorldEmpty = true;
+        initializeSimulation();
+        setState(STATE_SIMULATION);
+    });
+    mainMenuPanel.addButton("Exit", width / 2 - 75, height / 2 + 200, 150, 40, event -> exit());
 }
 
 // Setting up simulation-specific controls
@@ -396,21 +398,35 @@ public void setupSimulationControls() {
     simulationPanel.addButton("Speed Up", 110, height - 50, 80, 30, event -> simulationSpeed = min(simulationSpeed + 0.5f, 3.0f));
     simulationPanel.addButton("Slow Down", 200, height - 50, 80, 30, event -> simulationSpeed = max(simulationSpeed - 0.5f, 0.5f));
     simulationPanel.addButton("Main Menu", 290, height - 50, 100, 30, event -> {
-        currentState = STATE_MAIN_MENU;
-        mainMenuPanel.show();
-        simulationPanel.hide();
+        setState(STATE_MAIN_MENU);
     });
 }
 
 public void initializeSimulation() {
-    generationCount = 0;
+    generationCount = 1;
+    isPaused = false;
+    selectedCreature = null;
     creatures.clear();
     foods.clear();
     obstacles.clear();
 
-    for (int i = 0; i < 50; i++) creatures.add(new Creature(null));
+    if (!isWorldEmpty) {
+        spawnNewGeneration(50);
+    }
     for (int i = 0; i < 100; i++) foods.add(new Food());
     for (int i = 0; i < 10; i++) obstacles.add(new Obstacle(random(width), random(height), random(20, 50)));
+}
+
+public void setState(int newState) {
+    currentState = newState;
+    mainMenuPanel.hide();
+    simulationPanel.hide();
+
+    if (newState == STATE_MAIN_MENU) {
+        mainMenuPanel.show();
+    } else if (newState == STATE_SIMULATION) {
+        simulationPanel.show();
+    }
 }
 
 public void runSimulation() {
@@ -438,6 +454,15 @@ public void updateAndDisplayCreatures() {
             creature.display();
         }
     }
+
+    if (!isWorldEmpty && creatures.isEmpty() && currentState == STATE_SIMULATION) {
+        generationCount++;
+        spawnNewGeneration(50);
+    }
+}
+
+public void spawnNewGeneration(int count) {
+    for (int i = 0; i < count; i++) creatures.add(new Creature(null));
 }
 
 public void updateAndDisplayFood() {
@@ -468,12 +493,10 @@ public void keyPressed() {
     if (keyCode == RIGHT) camPos.x += panSpeed;
 
     if (key == 'M' || key == 'm') {
-        currentState = STATE_MAIN_MENU;
-        mainMenuPanel.show();
-        simulationPanel.hide();
+        setState(STATE_MAIN_MENU);
     } else if (key == 'R' || key == 'r') {
         initializeSimulation();
-    } else if (key == 'S' || key == 's' && selectedCreature != null) {
+    } else if ((key == 'S' || key == 's') && selectedCreature != null) {
         saveToArchive(selectedCreature);
     } else if (key == 'L' || key == 'l') {
         loadRandomCreatureFromArchive();
@@ -503,7 +526,11 @@ public void displayCreatureInfo() {
 }
 
 public void mousePressed() {
-    PVector mousePos = new PVector(mouseX, mouseY);
+    if (currentState != STATE_SIMULATION) return;
+
+    float worldMouseX = ((mouseX - width / 2) / zoomLevel) + camPos.x;
+    float worldMouseY = ((mouseY - height / 2) / zoomLevel) + camPos.y;
+    PVector mousePos = new PVector(worldMouseX, worldMouseY);
     selectedCreature = null;
     for (Creature creature : creatures) {
         if (dist(mousePos.x, mousePos.y, creature.pos.x, creature.pos.y) < creature.genes.size * 10) {
@@ -527,19 +554,30 @@ public void loadRandomCreatureFromArchive() {
 }
 
 public void draw() {
-    background(environment.getCurrentSkyColor());
-    environment.updateCycle();
-
-    if (currentState == STATE_SIMULATION && !isPaused) {
-        runSimulation();
-    } else if (isPaused) {
-        fill(255, 100, 100);
-        textAlign(CENTER);
-        text("Simulation Paused", width / 2, height / 2);
+    switch (currentState) {
+        case STATE_MAIN_MENU:
+            displayMainMenu();
+            break;
+        case STATE_SIMULATION:
+            background(environment.getCurrentSkyColor());
+            environment.updateCycle();
+            if (!isPaused) {
+                runSimulation();
+            } else {
+                fill(255, 100, 100);
+                textAlign(CENTER);
+                text("Simulation Paused", width / 2, height / 2);
+            }
+            displayHUD();
+            if (selectedCreature != null) displayCreatureInfo();
+            break;
+        case STATE_ARCHIVE:
+            displayArchiveScreen();
+            break;
+        case STATE_CONTROLS:
+            displayControlsScreen();
+            break;
     }
-
-    displayHUD();
-    if (selectedCreature != null) displayCreatureInfo();
 }
 
 public void displayMainMenu() {
@@ -552,7 +590,33 @@ public void displayMainMenu() {
     fill(180);
     text("Developer: Christopher J Boardman", width / 2, height / 2 - 100);
     text("Instagram: @Wigan96", width / 2, height / 2 - 70);
-    mainMenuPanel.show();
+}
+
+public void displayArchiveScreen() {
+    background(30, 30, 50);
+    textAlign(CENTER);
+    fill(255);
+    textSize(28);
+    text("Creature Archive", width / 2, 80);
+    textSize(18);
+    text("Saved creatures: " + savedCreatures.size(), width / 2, 130);
+    text("Press M to return to Main Menu", width / 2, height - 40);
+}
+
+public void displayControlsScreen() {
+    background(25, 45, 60);
+    textAlign(LEFT);
+    fill(255);
+    textSize(28);
+    text("Control Map", 80, 80);
+    textSize(18);
+    text("Arrow Keys: Pan Camera", 80, 140);
+    text("Mouse Wheel: Zoom In/Out", 80, 175);
+    text("M: Return to Main Menu", 80, 210);
+    text("R: Restart Simulation", 80, 245);
+    text("S: Save Selected Creature", 80, 280);
+    text("L: Load Creature from Archive", 80, 315);
+    text("Press M to return to Main Menu", 80, height - 40);
 }
 
 
